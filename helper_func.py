@@ -7,16 +7,15 @@ from pyrogram.types import ChatJoinRequest
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
-from database.database import db
+
+# Correct import from your database file
+from database.database import update_request_status, check_request_status 
 
 @Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
 async def handle_join_request(client, request: ChatJoinRequest):
     try:
-        await db.users.update_one(
-            {"id": request.from_user.id},
-            {"$set": {"has_requested": True}},
-            upsert=True
-        )
+        # Mark the request in MongoDB
+        await update_request_status(request.from_user.id, True)
     except:
         pass
 
@@ -33,8 +32,8 @@ async def is_subscribed(filter, client, update):
             return True
     except UserNotParticipant:
         try:
-            user_data = await db.users.find_one({"id": user_id})
-            if user_data and user_data.get("has_requested"):
+            # Check MongoDB if the user has a pending request
+            if await check_request_status(user_id):
                 return True
         except:
             pass
