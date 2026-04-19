@@ -5,8 +5,6 @@ dbclient = pymongo.MongoClient(DB_URL)
 database = dbclient[DB_NAME]
 user_data = database['users']
 
-
-
 async def present_user(user_id : int):
     found = user_data.find_one({'_id': user_id})
     return bool(found)
@@ -20,23 +18,19 @@ async def full_userbase():
     user_ids = []
     for doc in user_docs:
         user_ids.append(doc['_id'])
-        
     return user_ids
 
 async def del_user(user_id: int):
     user_data.delete_one({'_id': user_id})
     return
 
+# --- NEW FUNCTIONS ADDED BELOW ---
 
+async def update_request_status(user_id: int, status: bool):
+    user_data.update_one({'_id': user_id}, {'$set': {'has_requested': status}}, upsert=True)
+    return
 
-
-
-
-
-
-
-# Jishu Developer 
-# Don't Remove Credit 🥺
-# Telegram Channel @Madflix_Bots
-# Backup Channel @JishuBotz
-# Developer @JishuDeveloper
+async def check_request_status(user_id: int):
+    user = user_data.find_one({'_id': user_id})
+    return user.get('has_requested', False) if user else False
+    
