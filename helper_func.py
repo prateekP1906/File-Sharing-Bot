@@ -7,11 +7,12 @@ from pyrogram.types import ChatJoinRequest
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
+from database.database import db
 
 @Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
 async def handle_join_request(client, request: ChatJoinRequest):
     try:
-        await client.db.users.update_one(
+        await db.users.update_one(
             {"id": request.from_user.id},
             {"$set": {"has_requested": True}},
             upsert=True
@@ -32,7 +33,7 @@ async def is_subscribed(filter, client, update):
             return True
     except UserNotParticipant:
         try:
-            user_data = await client.db.users.find_one({"id": user_id})
+            user_data = await db.users.find_one({"id": user_id})
             if user_data and user_data.get("has_requested"):
                 return True
         except:
