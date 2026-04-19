@@ -1,14 +1,23 @@
 import base64
 import re
 import asyncio
-from pyrogram import filters
+from pyrogram import filters, Client
 from pyrogram.enums import ChatMemberStatus
+from pyrogram.types import ChatJoinRequest
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
 
-
-
+@Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
+async def handle_join_request(client, request: ChatJoinRequest):
+    try:
+        await client.db.users.update_one(
+            {"id": request.from_user.id},
+            {"$set": {"has_requested": True}},
+            upsert=True
+        )
+    except:
+        pass
 
 async def is_subscribed(filter, client, update):
     if not FORCE_SUB_CHANNEL:
@@ -16,16 +25,20 @@ async def is_subscribed(filter, client, update):
     user_id = update.from_user.id
     if user_id in ADMINS:
         return True
+    
     try:
-        member = await client.get_chat_member(chat_id = FORCE_SUB_CHANNEL, user_id = user_id)
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+            return True
     except UserNotParticipant:
-        return False
-
-    if not member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-        return False
-    else:
-        return True 
-
+        try:
+            user_data = await client.db.users.find_one({"id": user_id})
+            if user_data and user_data.get("has_requested"):
+                return True
+        except:
+            pass
+            
+    return False 
 
 async def encode(string):
     string_bytes = string.encode("ascii")
@@ -33,14 +46,12 @@ async def encode(string):
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
 
-
 async def decode(base64_string):
-    base64_string = base64_string.strip("=") # links generated before this commit will be having = sign, hence striping them to handle padding errors.
+    base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
     string_bytes = base64.urlsafe_b64decode(base64_bytes) 
     string = string_bytes.decode("ascii")
     return string
-
 
 async def get_messages(client, message_ids):
     messages = []
@@ -63,7 +74,6 @@ async def get_messages(client, message_ids):
         total_messages += len(temb_ids)
         messages.extend(msgs)
     return messages
-
 
 async def get_message_id(client, message):
     if message.forward_from_chat:
@@ -89,7 +99,6 @@ async def get_message_id(client, message):
     else:
         return 0
 
-
 def get_readable_time(seconds: int) -> str:
     count = 0
     up_time = ""
@@ -111,16 +120,4 @@ def get_readable_time(seconds: int) -> str:
     up_time += ":".join(time_list)
     return up_time
 
-
 subscribed = filters.create(is_subscribed)
-       
-
-
-
-
-
-# Jishu Developer 
-# Don't Remove Credit 🥺
-# Telegram Channel @Madflix_Bots
-# Backup Channel @JishuBotz
-# Developer @JishuDeveloper
