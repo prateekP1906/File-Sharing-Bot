@@ -27,10 +27,12 @@ async def del_user(user_id: int):
 # --- NEW FUNCTIONS ADDED BELOW ---
 
 async def update_request_status(user_id: int, status: bool):
+    # This uses your 'user_data' collection variable
     user_data.update_one({'_id': user_id}, {'$set': {'has_requested': status}}, upsert=True)
-    return
 
 async def check_request_status(user_id: int):
     user = user_data.find_one({'_id': user_id})
-    return user.get('has_requested', False) if user else False
+    if user:
+        return user.get('has_requested', False)
+    return False
     
