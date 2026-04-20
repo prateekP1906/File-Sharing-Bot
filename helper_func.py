@@ -7,6 +7,7 @@ from pyrogram.types import ChatJoinRequest
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
+from database.database import check_request_status
 
 async def is_subscribed(filter, client, update):
     if not FORCE_SUB_CHANNEL:
@@ -15,21 +16,17 @@ async def is_subscribed(filter, client, update):
     if user_id in ADMINS:
         return True
     
-    # 1. First check if they are already a full member (Fastest check)
+    # 1. Check if they are a full member
     try:
         member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
             return True
     except UserNotParticipant:
-        # 2. If NOT a member, check the "Join Requests" list (The Pending list)
-        try:
-            async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL):
-                if request.from_user.id == user_id:
-                    return True
-        except Exception as e:
-            print(f"Error checking join requests: {e}")
+        # 2. If not a member, check our MongoDB 'Memory'
+        if await check_request_status(user_id):
+            return True
             
-    return False 
+    return False
 
 async def encode(string):
     string_bytes = string.encode("ascii")
