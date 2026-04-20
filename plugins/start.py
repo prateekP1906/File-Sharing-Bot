@@ -1,12 +1,12 @@
 import os, asyncio, humanize
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, ChatJoinRequest
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from bot import Bot
-from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FILE_AUTO_DELETE
+from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FILE_AUTO_DELETE, FORCE_SUB_CHANNEL
 from helper_func import subscribed, encode, decode, get_messages
-from database.database import add_user, del_user, full_userbase, present_user
+from database.database import add_user, del_user, full_userbase, present_user, update_request_status
 
 madflixofficials = FILE_AUTO_DELETE
 jishudeveloper = madflixofficials
@@ -203,4 +203,11 @@ async def delete_files(messages, client, k):
         except Exception as e:
             print(f"The attempt to delete the media {msg.id} was unsuccessful: {e}")
     await k.edit_text("Your Video / File Is Successfully Deleted ✅")
-    
+
+@Bot.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
+async def handle_join_request(client, request: ChatJoinRequest):
+    try:
+        await update_request_status(request.from_user.id, True)
+        print(f"Successfully recorded join request for {request.from_user.id}")
+    except Exception as e:
+        print(f"Error saving join request: {e}")
