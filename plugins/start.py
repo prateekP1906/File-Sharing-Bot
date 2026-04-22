@@ -206,12 +206,12 @@ async def delete_files(messages, client, k):
 @Bot.on_chat_join_request()
 async def handle_join_request(client, request: ChatJoinRequest):
     try:
-        # Check if the request is for Channel 1 or Channel 2
+        # Match the chat ID to record the correct channel request
         if request.chat.id == int(FORCE_SUB_CHANNEL):
             await update_request_status(request.from_user.id, 1, True)
+            print(f"Recorded Channel 1 request for {request.from_user.id}")
         elif request.chat.id == int(FORCE_SUB_CHANNEL_2):
             await update_request_status(request.from_user.id, 2, True)
-            
-        print(f"Recorded request for {request.from_user.id} in {request.chat.id}")
+            print(f"Recorded Channel 2 request for {request.from_user.id}")
     except Exception as e:
-        print(f"Error saving join request: {e}")
+        print(f"Error saving request: {e}")
