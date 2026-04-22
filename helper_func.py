@@ -4,28 +4,38 @@ import asyncio
 from pyrogram import filters, Client
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.types import ChatJoinRequest
-from config import FORCE_SUB_CHANNEL, ADMINS
+from config import FORCE_SUB_CHANNEL,FORCE_SUB_CHANNEL_2, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
 from database.database import check_request_status
 
 async def is_subscribed(filter, client, update):
-    if not FORCE_SUB_CHANNEL:
-        return True
     user_id = update.from_user.id
-    if user_id in ADMINS:
-        return True
+    if user_id in ADMINS: return True
     
-    # 1. Check if they are a full member
+    # 1. Check Channel 1 (Member or Requested)
+    ch1_ok = False
     try:
-        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-        if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-            return True
-    except UserNotParticipant:
-        # 2. If not a member, check our MongoDB 'Memory'
-        if await check_request_status(user_id):
-            return True
-            
+        m1 = await client.get_chat_member(FORCE_SUB_CHANNEL, user_id)
+        if m1.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+            ch1_ok = True
+    except: pass
+
+    # 2. Check Channel 2 (Member or Requested)
+    ch2_ok = False
+    try:
+        m2 = await client.get_chat_member(FORCE_SUB_CHANNEL_2, user_id)
+        if m2.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+            ch2_ok = True
+    except: pass
+
+    # 3. Check MongoDB status
+    req1, req2 = await check_request_status(user_id)
+    
+    # Logic: User passes ONLY if both channels are satisfied
+    if (ch1_ok or req1) and (ch2_ok or req2):
+        return True
+        
     return False
 
 async def encode(string):
