@@ -13,7 +13,7 @@ async def is_subscribed(filter, client, update):
     user_id = update.from_user.id
     if user_id in ADMINS: return True
     
-    # 1. Check Channel 1 (Member or Requested)
+    # 1. Check Channel 1 (Membership or Request)
     ch1_ok = False
     try:
         m1 = await client.get_chat_member(FORCE_SUB_CHANNEL, user_id)
@@ -21,7 +21,7 @@ async def is_subscribed(filter, client, update):
             ch1_ok = True
     except: pass
 
-    # 2. Check Channel 2 (Member or Requested)
+    # 2. Check Channel 2 (Membership or Request)
     ch2_ok = False
     try:
         m2 = await client.get_chat_member(FORCE_SUB_CHANNEL_2, user_id)
@@ -29,10 +29,11 @@ async def is_subscribed(filter, client, update):
             ch2_ok = True
     except: pass
 
-    # 3. Check MongoDB status
+    # 3. Check DB Memory
     req1, req2 = await check_request_status(user_id)
     
-    # Logic: User passes ONLY if both channels are satisfied
+    # THE STRICT LOGIC: User must satisfy BOTH requirements
+    # (Member of Ch1 OR Requested Ch1) AND (Member of Ch2 OR Requested Ch2)
     if (ch1_ok or req1) and (ch2_ok or req2):
         return True
         
