@@ -28,11 +28,12 @@ async def del_user(user_id: int):
 
 async def update_request_status(user_id: int, status: bool):
     # This uses your 'user_data' collection variable
+    field = f"has_requested_{channel_num}"
     user_data.update_one({'_id': user_id}, {'$set': {'has_requested': status}}, upsert=True)
 
 async def check_request_status(user_id: int):
     user = user_data.find_one({'_id': user_id})
     if user:
-        return user.get('has_requested', False)
-    return False
+        return user.get('has_requested', False), user.get('has_requested_2', False)
+    return False, False
     
