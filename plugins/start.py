@@ -116,7 +116,7 @@ async def not_joined(client: Client, message: Message):
     buttons = [
         [
             InlineKeyboardButton(text="Join Channel 1", url="https://t.me/+cU3_RSTYlalhYTM1"),
-            InlineKeyboardButton(text="Join Channel 2", url="https://t.me/+tnohS8-1PPBhODRl") # <-- Make sure line 118 has that comma!
+            InlineKeyboardButton(text="Join Channel 2", url="https://t.me/+6TCGIfhDOvg4OTU1") # <-- Make sure line 118 has that comma!
         ]
     ]
     
